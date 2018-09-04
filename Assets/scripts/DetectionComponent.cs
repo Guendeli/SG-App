@@ -17,6 +17,8 @@ public class DetectionComponent : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        if (lineVisualizer != null) { lineVisualizer.SetLine(raycastSource.position, raycastSource.forward * 100.0f); }
+        DetectCharacter(raycastSource);
         DetectInteractable(raycastSource);
 	}
 
@@ -26,14 +28,13 @@ public class DetectionComponent : MonoBehaviour {
     {
         // TODO: Assert Line Visauliser, should be independent from business logic
         RaycastHit hit;
-        if (lineVisualizer != null) { lineVisualizer.SetLine(source.position, source.forward * 100.0f); }
         #region Interactive Object Detection
         if (Physics.Raycast(source.position, source.forward, out hit))
         {
+            if (lineVisualizer != null) { lineVisualizer.SetLine(source.position, hit.point); }
             InteractiveObjectBase interactable = hit.collider.GetComponent<InteractiveObjectBase>();
             if (interactable != null)
             {
-                if (lineVisualizer != null) { lineVisualizer.SetLine(source.position, hit.point); }
                 lastInteractable = interactable;
                 lastInteractable.OnHoverStart();
                 if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger))
@@ -51,24 +52,59 @@ public class DetectionComponent : MonoBehaviour {
             }
             else
             {
-                if (lastInteractable != null)
+                if (lastInteractable != null && !lastInteractable.isInHand)
                 {
                     lastInteractable.OnHoverEnds();
                     lastInteractable = null;
+                }
+                else if (lastInteractable != null && lastInteractable.isInHand)
+                {
+                    if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger))
+                    {
+                        lastInteractable.OnInteractionEnds();
+                    }
                 }
             }
         }
         else
         {
-            if (lastInteractable != null)
+            if (lastInteractable != null && !lastInteractable.isInHand)
             {
                     lastInteractable.OnHoverEnds();
                     lastInteractable = null;
+            }
+            else if (lastInteractable != null && lastInteractable.isInHand)
+            {
+                if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger))
+                {
+                    lastInteractable.OnInteractionEnds();
+                }
             }
         }
         #endregion
     }
 
-    // private methods
+    private void DetectCharacter(Transform source)
+    {
+        // TODO: Assert Line Visauliser, should be independent from business logic
+        RaycastHit hit;
+        if (Physics.Raycast(source.position, source.forward, out hit))
+        {
+             if (lineVisualizer != null) { lineVisualizer.SetLine(source.position, hit.point); }
+            CharacterScript character = hit.collider.GetComponent<CharacterScript>();
+            if (character != null)
+            {
+                // only trigger Character interaction if the user is already picking an Object
+                if (lastInteractable != null && lastInteractable.isInHand)
+                {
+                    if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger))
+                    {
+                        GrabbableInteractable obj = (GrabbableInteractable)lastInteractable;
+                        character.OnCharacterInteractionStart(obj.type);
+                    }
+                }
+            }
+        }
+    }
 
 }

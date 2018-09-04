@@ -9,7 +9,7 @@ public class InteractiveObjectBase : MonoBehaviour {
      * OnEventStart/End : called when the user clicks the OVR.PrimaryIndexTrigger while pointing the given object
      * OnHoverStart/End: called when the user points to the relevant object with the GearVR/Oculus Go Controller 
      */
-    [Header("References")]
+    
     public bool isInHand { get; private set; }
     private bool isHovering;
     private OutlineMeshCopy highlighter;
@@ -55,8 +55,8 @@ public class InteractiveObjectBase : MonoBehaviour {
         {
             return;
         }
-
         isInHand = true;
+        GetComponent<Collider>().enabled = false;
     }
 
     public virtual void OnInteractionEnds()
@@ -65,8 +65,8 @@ public class InteractiveObjectBase : MonoBehaviour {
         {
             return;
         }
-
         isInHand = false;
+        GetComponent<Collider>().enabled = true;
     }
 
 }
